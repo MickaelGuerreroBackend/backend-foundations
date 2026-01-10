@@ -1,59 +1,61 @@
-// 1️⃣ Interfaces
-interface User {
-  id: number;
-  name: string;
-  email: string;
+// JOUR 3 — Mini moteur Budget (backend logique)
+
+// 1) On définit la forme des données qu'on attend.
+// (Comme une "fiche" obligatoire)
+interface BudgetInput {
+  monthlyIncome: number; // revenus mensuels
+  monthlyFixedExpenses: number; // dépenses fixes mensuelles
+  alertThreshold: number; // seuil d'alerte (ex: 100)
 }
 
-interface Product {
-  id: number;
-  name: string;
-  price: number;
+// 2) On définit la forme du résultat qu'on veut obtenir.
+interface BudgetResult {
+  remaining: number; // reste à vivre
+  alert: boolean; // alerte déclenchée ou non
+  message: string; // message lisible pour l'humain
 }
 
-// 2️⃣ Données
-const users: User[] = [{ id: 1, name: "Mickael", email: "mickael@test.com" }];
-
-const products: Product[] = [
-  { id: 1, name: "Clavier", price: 49 },
-  { id: 2, name: "Souris", price: 29 },
-];
-
-// 3️⃣ Fonctions
-function getTotalPrice(items: Product[]): number {
-  let total = 0;
-
-  for (const item of items) {
-    total += item.price;
+// 3) Fonction principale : elle applique tes règles.
+function computeBudget(input: BudgetInput): BudgetResult {
+  // Règle de sécurité 1 : un revenu doit être > 0
+  if (input.monthlyIncome <= 0) {
+    throw new Error("Revenu mensuel invalide (doit être > 0).");
   }
 
-  return total;
-}
-
-// 4️⃣ Exécution
-console.log("Utilisateurs :", users);
-console.log("Total produits :", getTotalPrice(products));
-// 5️⃣ Exercice – Produits avancés
-
-interface ProductEx {
-  id: number;
-  name: string;
-  price: number;
-}
-
-const productList: ProductEx[] = [
-  { id: 1, name: "Écran", price: 199 },
-  { id: 2, name: "Casque", price: 89 },
-];
-
-function calculateTotal(products: ProductEx[]): number {
-  let total = 0;
-
-  for (const product of products) {
-    total += product.price;
+  // Règle de sécurité 2 : les dépenses fixes ne peuvent pas être négatives
+  if (input.monthlyFixedExpenses < 0) {
+    throw new Error(
+      "Dépenses fixes invalides (ne peuvent pas être négatives)."
+    );
   }
 
-  return total;
+  // Règle de sécurité 3 : le seuil d'alerte doit être >= 0
+  if (input.alertThreshold < 0) {
+    throw new Error("Seuil d'alerte invalide (doit être >= 0).");
+  }
+
+  // Ta règle métier : reste à vivre = revenus - dépenses fixes
+  const remaining = input.monthlyIncome - input.monthlyFixedExpenses;
+
+  // Ta règle métier : alerte si reste <= seuil
+  const alert = remaining <= input.alertThreshold;
+
+  const message = alert
+    ? `⚠️ Alerte : il ne te reste que ${remaining}€ (seuil ${input.alertThreshold}€).`
+    : `✅ OK : il te reste ${remaining}€ (seuil ${input.alertThreshold}€).`;
+
+  return { remaining, alert, message };
 }
 
-console.log("Total exercice :", calculateTotal(productList));
+// 4) Test (comme si une appli envoyait des données au backend)
+try {
+  const result = computeBudget({
+    monthlyIncome: 0,
+    monthlyFixedExpenses: 100,
+    alertThreshold: 100,
+  });
+
+  console.log(result.message);
+} catch (error) {
+  console.error("Erreur:", (error as Error).message);
+}
