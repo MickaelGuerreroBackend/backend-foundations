@@ -1,3 +1,4 @@
+import { saveBudgetRow, listBudgets } from "../services/budget.repo";
 function parseNumber(value: unknown, fieldName: string): number {
   const num = Number(value);
 
@@ -23,15 +24,33 @@ export function getBudget(req: Request, res: Response) {
     res.status(400).json({ error: (error as Error).message });
   }
 }
-export function postBudget(req: Request, res: Response) {
+export async function postBudget(req: Request, res: Response) {
   try {
     const income = parseNumber(req.body.income, "income");
     const expenses = parseNumber(req.body.expenses, "expenses");
     const threshold = parseNumber(req.body.threshold, "threshold");
 
     const result = getBudgetResult(income, expenses, threshold);
-    res.json(result);
+
+    const saved = await saveBudgetRow({
+      income,
+      expenses,
+      threshold,
+      remaining: result.remaining,
+      alert: result.alert,
+      message: result.message,
+    });
+
+    res.json(saved);
   } catch (error) {
     res.status(400).json({ error: (error as Error).message });
+  }
+}
+export async function getBudgets(req: Request, res: Response) {
+  try {
+    const rows = await listBudgets();
+    res.json(rows);
+  } catch (error) {
+    res.status(500).json({ error: "DB error" });
   }
 }
